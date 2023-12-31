@@ -99,15 +99,43 @@ class WordSearch:
           add = 0
         cls.size = len(cls.words[i]) + 3 + add
   # .....
+  @staticmethod
+  def increase_size():
+    for i in range(0, WordSearch.size):
+      # Adds a new column in existing rows
+      for x in range(0,3):
+        #print(i)
+        WordSearch.wordsearch[i].append("-")
+    increase = 2
+    for a in range(0,3):
+      WordSearch.wordsearch.append([])
+      WordSearch.size += 1
 
+      index = len(WordSearch.wordsearch)-1
+      
+      for x in range(0, WordSearch.size + increase):
+        # Adds new row
+        WordSearch.wordsearch[index].append("-")
+      increase -= 1
 ```
 
 ### Random Filling
 
-Empty spaces on the board are filled with random letters to create a more challenging word search experience.
+Board is initially filled with empty spaces with a blank canvas, after words have been addded, the empty spaces on the board are filled with random letters.
 
 ```python
 class WordSearch:
+  # .....
+  #---Filling board with empty spaces---
+  @classmethod
+  def fill_board(cls):
+    for row in range(0, cls.size):
+      
+      cls.wordsearch.append([])
+      
+      for col in range(0, cls.size):
+        
+        cls.wordsearch[row].append("-")
   # .....
   #---Fill empty spaces with random letters---
   @classmethod
@@ -198,57 +226,85 @@ Words inputted by the user are placed on the word search board in various direct
 
 ```python
 class WordSearch:
-  # .....
- @classmethod
-  def add_words_to_board(cls):
-    for i in range(len(cls.words)):
-      cls.addWord(cls.words[i].upper())
-
-  
-  #---Getting word possitions and validation---
-  @classmethod
-  def guess_word_position(cls, coordslist: list):
-    formedword = []
-    if len(coordslist) == 4:
-      # If there are 4 coordiinates
-      # code to check here
-      # convert coords to list indices e.g. a,a,c,c --> 0,0,2,2
-      # check coord validity
-      # get string of coord
-      # check if word exists
-      # x1 = x2
-      # y1 = y2
-      # x1-x2 = y1-y2
-      
-      # converting the alphabet coords to list indices and unpacking it into the 4 variables
-      x1, y1, x2, y2 = cls.convert_coords(coordslist)
-      validcoords, lengthofword, xvector, yvector = cls.check_coord_validity(x1, y1, x2, y2)
-      
-      if validcoords:
-        # forms the wordsearch board string 
-        xpos = x1
-        ypos = y1
-        for i in range(lengthofword+1):
-          formedword.append(cls.wordsearch[ypos][xpos])
-          WordSearch.curguesswordpos.append(ypos)
-          WordSearch.curguesswordpos.append(xpos)
-          xpos += xvector
-          ypos += yvector
-  
-        
-        formedword = "".join(formedword)
-
-        WordSearch.check_word(formedword)
-
-        
-      # coordinates are invalid 
-      else:  
-        print("Invalid coordinates inputted.")
-
-    # insufficient coords inputted
-    else:
-      print("Insufficient coordinates inputted.")
-  # .....
+   # .....
+   @classmethod
+     def addWord(cls, word):
+       direction = ["horizontal", "vertical", "diagonal"]
+   
+       loop = True
+       count = 0
+   
+       while loop:
+   
+         if count >= 4:
+           # If direction been changed 4 times, increase size of board
+           WordSearch.increase_size()
+           count = 0
+       
+         choice = direction[random.randint(0, len(direction)-1)]
+     
+         if word == "TESTTESTTESTTEST":
+           choice = "diagonal"
+     
+         
+         # horizontal
+         if choice == "horizontal":
+     
+           row, col, newDirection = cls.check_no_overlap(word, cls.size-1, cls.size-len(word), choice, 0) # word, row, col, direction, add
+       
+           if newDirection:
+             # If looped 4 times, gotta loop back whole thing to pick a new direction
+             loop = True
+             count += 1
+           else:
+           
+             for i in range(0, len(word)):
+               # Adds letter by letter to the row
+               cls.wordsearch[row][col + i] = word[i]
+               cls.wordpos.append((row, col + i))
+     
+             loop = False
+     
+         # vertical
+         elif choice == "vertical":
+     
+           row, col, newDirection = cls.check_no_overlap(word, cls.size-len(word), cls.size-1, choice, 0) # word, row, col, direction, add
+           
+           if newDirection:
+             # If looped 4 times, gotta loop back whole thing to pick a new direction
+             loop = True
+             count += 1
+           else:
+           
+             for i in range(0, len(word)):
+               # Adds letter by letter to the row
+               cls.wordsearch[row + i][col] = word[i]
+               cls.wordpos.append((row + i, col))
+       
+             loop = False
+           
+         elif choice == "diagonal":
+     
+           row, col, newDirection = cls.check_no_overlap(word, cls.size-len(word), cls.size-len(word), choice, len(word)-1) # word, row, col, direction, add
+   
+           if newDirection:
+             # If looped 4 times, gotta loop back whole thing to pick a new direction
+             loop = True
+             count += 1
+           else:
+     
+             for i in range(0, len(word)):
+               # Adds letter by letter to the row
+               cls.wordsearch[row + i][col + i] = word[i]
+               cls.wordpos.append((row + i, col + i))
+     
+             loop = False
+   # .....
+   @classmethod
+     def add_words_to_board(cls):
+       for i in range(len(cls.words)):
+         cls.addWord(cls.words[i].upper())
+   # .....
 ```
 
 ### Checking Overlap
@@ -314,7 +370,7 @@ class WordSearch:
 
 ### Guessing Word Positions
 
-Users can guess the positions of words by providing coordinates (e.g., X1, Y1, X2, Y2). The program validates the coordinates and reveals the word on the board if the guess is correct.
+Users can guess the positions of words by providing coordinates (e.g., X1, Y1, X2, Y2). The program validates the coordinates and reveals the word on the board if the guess is correct and the word was in the game.
 
 ```python
 class WordSearch:
@@ -363,6 +419,67 @@ class WordSearch:
     else:
       print("Insufficient coordinates inputted.")
   # .....
+  @staticmethod
+  def check_word(word):
+    pos = WordSearch.curguesswordpos
+    wordsearch = WordSearch.wordsearch
+    
+    if word in WordSearch.words:
+      # If word is valid, gets the index and removes from the bank
+      index = WordSearch.words.index(word)
+      WordSearch.words.pop(index)
+
+      i = 0
+      ind = 0
+
+
+      # makes the correctly guessed word green, letter by letter
+      for i in range(int(len(pos)/2)):
+        wordsearch[pos[ind]][pos[ind+1]] = Fore.GREEN + wordsearch[pos[ind]][pos[ind+1]] + Style.RESET_ALL 
+        ind += 2
+
+    pos.clear()
+
+  @staticmethod
+  def convert_coords(coordslist: list):
+    newcoordslist = list(map(lambda x: ord(x.upper())-65, coordslist))
+    return newcoordslist
+
+  @staticmethod
+  def check_coord_validity(x1, y1, x2, y2):
+    validcoords = False
+    xvector = 0
+    yvector = 0
+    
+    # vertical line
+    if x1 == x2:
+      validcoords = True
+      lengthofword = abs(y2-y1)
+      xvector = 0
+      yvector = int((y2 - y1)/lengthofword)
+
+    # horizontal line
+    elif y1 == y2:
+      validcoords = True
+      lengthofword = abs(x2-x1)
+      yvector = 0
+      xvector = int((x2 - x1)/lengthofword)
+
+    # diagonal line
+    elif x1-x2 == y1-y2:
+      validcoords = True
+      # can either be difference the x coords or y coords
+      lengthofword = abs(x1-x2)
+      xvector = int((x2 - x1)/lengthofword)
+      yvector = int((y2 - y1)/lengthofword)
+
+    else:
+      validcoords = False
+      lengthofword = 0
+      xvector = 0
+      yvector = 0
+
+    return (validcoords, lengthofword, xvector, yvector)
 ```
 
 ### Revealing Words
